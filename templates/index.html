@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jethalal AI - Gokuldham Edition</title>
+    <style>
+        /* --- GOKULDHAM BLUE THEME --- */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e3f2fd; /* Light Blue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 50, 150, 0.15);
+            border: 1px solid #bbdefb;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        /* --- HEADER --- */
+        .chat-header {
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            padding: 15px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .header-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .reset-btn:hover { background: rgba(255, 255, 255, 0.4); }
+
+        /* --- CHAT AREA --- */
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: #f1f8e9; /* Very subtle greenish-white hint like Gada House walls */
+            scroll-behavior: smooth;
+        }
+
+        /* --- MESSAGES --- */
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 1rem;
+            line-height: 1.5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            word-wrap: break-word;
+        }
+
+        /* Bot (Jethalal) */
+        .bot-wrapper { align-self: flex-start; }
+        .bot-message {
+            background-color: #ffffff;
+            border: 1px solid #90caf9;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+        .bot-name {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #d32f2f; /* Red for Jethalal's shirt vibe */
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* User */
+        .user-wrapper { align-self: flex-end; align-items: flex-end; }
+        .user-message {
+            background-color: #1976d2;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* --- INPUT AREA --- */
+        .input-area {
+            padding: 15px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid #e1f5fe;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 25px;
+            border: 1px solid #b3e5fc;
+            outline: none;
+            font-size: 16px;
+        }
+        input:focus { border-color: #1976d2; }
+
+        .icon-btn {
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        #mic-btn { background-color: #f1f3f4; color: #555; }
+        #mic-btn.listening { background-color: #d32f2f; color: white; animation: pulse 1.5s infinite; }
+        
+        #send-btn { background-color: #1976d2; color: white; }
+        #send-btn:hover { background-color: #1565c0; }
+        #send-btn:disabled { background-color: #b0bec5; cursor: default; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-title">👓 Jethalal AI</div>
+            <button class="reset-btn" onclick="resetChat()">New Chat ⟳</button>
+        </div>
+        
+        <div class="chat-box" id="chat-box">
+            <div class="message-wrapper bot-wrapper">
+                <div class="message bot-message">
+                    <span class="bot-name">Jethalal</span>
+                    Jai Jinendra! 🙏 
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <button id="mic-btn" class="icon-btn" title="Speak">🎤</button>
+            <input type="text" id="user-input" placeholder="Kuch boliye..." autocomplete="off">
+            <button id="send-btn" class="icon-btn" title="Send">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+
+        // --- 1. MUSIC & AUDIO SETUP ---
+        // Ensure you have 'static/music.mp3'
+        const bgMusic = new Audio('/static/music.mp3'); 
+        bgMusic.loop = true;   
+        bgMusic.volume = 0.5;
+
+        // Start music on first click
+        document.body.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.play().catch(e => console.log("Interaction needed for music"));
+            }
+        }, { once: true });
+
+        let currentAudio = null;
+
+        function stopAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+            bgMusic.volume = 0.5; // Restore music volume
+        }
+
+        function playAudio(url) {
+            stopAudio();
+            
+            if (url) {
+                // A. Lower Background Music (Ducking)
+                bgMusic.volume = 0.1;
+
+                // B. Play New AI Voice
+                // Add a timestamp to force browser to reload the audio file
+                currentAudio = new Audio(url);
+                currentAudio.play().catch(e => console.log("Audio play failed:", e));
+
+                // C. When AI Voice Ends, Raise Background Music
+                currentAudio.onended = () => {
+                    bgMusic.volume = 0.5;
+                };
+            }
+        
+        }
+
+        // --- 2. MESSAGING LOGIC ---
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (text === '') return;
+
+            stopAudio(); // Stop previous speech
+            addMessage(text, 'user');
+            userInput.value = '';
+            
+            sendBtn.disabled = true; // Prevent double send
+
+            try {
+                const response = await fetch('/ask_ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const data = await response.json();
+                addMessage(data.reply, 'bot');
+                playAudio(data.audio_url);
+
+            } catch (error) {
+                console.error("Error:", error);
+                addMessage("Hey Maa Mataji! Error aa gaya!", 'bot');
+            } finally {
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        function addMessage(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper', sender === 'user' ? 'user-wrapper' : 'bot-wrapper');
+            
+            const content = sender === 'bot' 
+                ? `<div class="message bot-message"><span class="bot-name">Jethalal</span>${text}</div>`
+                : `<div class="message user-message">${text}</div>`;
+
+            wrapper.innerHTML = content;
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- 3. EXTRAS ---
+        async function resetChat() {
+            stopAudio();
+            await fetch('/reset', { method: 'POST' });
+            chatBox.innerHTML = '';
+            addMessage("Jai Jinendra! Kya baat karni hai?", 'bot');
+        }
+
+        // --- 4. SPEECH RECOGNITION (MIC) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-IN'; // Indian English / Hindi mix support
+            
+            recognition.onstart = () => {
+                stopAudio();
+                bgMusic.volume = 0.1;
+                micBtn.classList.add('listening');
+            };
+
+            recognition.onend = () => {
+                micBtn.classList.remove('listening');
+                if(userInput.value === '') bgMusic.volume = 0.5;
+            };
+
+            recognition.onresult = (e) => {
+                userInput.value = e.results[0][0].transcript;
+                sendMessage();
+            };
+            
+            micBtn.onclick = () => {
+                if (bgMusic.paused) bgMusic.play();
+                recognition.start();
+            };
+        } else {
+            micBtn.style.display = 'none';
+        }
+
+        sendBtn.onclick = sendMessage;
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    </script>
+</body>
+</html>
